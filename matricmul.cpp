@@ -72,35 +72,13 @@ void matrixmul(
       mat_b_t b[MAT_B_ROWS][MAT_B_COLS],
       result_t res[MAT_A_ROWS][MAT_B_COLS])
 {
-  //rows of A matrix
-  int a1=0,a2=1,a3=2,a4=3;
-  //columns of B matrix
-  int b1=0,b2=1,b3=2,b4=3;
 
-  int arr1[]={0};
-  int arr2[]={0,1};
-  int arr3[]={0,1,2};
-  int arr4[]={0,1,2,3};
-  int arr5[]={1,2,3};
-  int arr6[]={2,3};
-  int arr7[]={3};
-
-  int brr1[]={0};
-  int brr2[]={0,1};
-  int brr3[]={0,1,2};
-  int brr4[]={0,1,2,3};
-  int brr5[]={1,2,3};
-  int brr6[]={2,3};
-  int brr7[]={3};
-
-  // Iterate over the rows of the A matrix
-  l1:for(int i=0;i<1;i++){
-    r1:for(int j=0;j<1;j++){
-      res[i][j]=0;
-      res[i][j]=mac(res[i][j],);
-    }
-  }
-
+      row:for(int i=1;i<9;i++){
+          column:for(int j=i;j>=0;j--){
+              res[i][j]=0;
+              res[i][j]=mac(res[i][j],a[i][j],b[i][j]);
+          }
+      }
 
 }
 
