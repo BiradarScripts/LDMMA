@@ -2,44 +2,44 @@
 #include <math.h>
 #include "karatsuba.h"
 
-// Function to multiply two numbers
-long long multiply(long long a, long long b) {
-    return a * b; // Regular multiplication for base case
+// Function to calculate the number of digits in a number
+int numDigits(long long num) {
+    return num == 0 ? 1 : (int)log10(num) + 1;
 }
 
-// Iterative Karatsuba multiplication
+// Recursive Karatsuba function
 long long karatsuba(long long x, long long y) {
-    // Handle base case when one of the numbers is less than 10
+    // Base case: if x or y is less than 10, return their product
     if (x < 10 || y < 10) {
-        return multiply(x, y);
+        return x * y;
     }
 
-    long long result = 0;
-    long long a, b, c, d;
-    int half_n;
+    // Get the number of digits in the larger of x or y
+    int n = fmax(numDigits(x), numDigits(y));
+    int half = n / 2;
 
-    while (x >= 10 && y >= 10) {
-        // Calculate the number of digits
-        int n = fmax(log10(x) + 1, log10(y) + 1);
-        half_n = n / 2;
+    // Split the numbers into two halves
+    long long a = x / (long long)pow(10, half);
+    long long b = x % (long long)pow(10, half);
+    long long c = y / (long long)pow(10, half);
+    long long d = y % (long long)pow(10, half);
 
-        // Split x and y into two halves
-        a = x / (long long)pow(10, half_n);
-        b = x % (long long)pow(10, half_n);
-        c = y / (long long)pow(10, half_n);
-        d = y % (long long)pow(10, half_n);
+    // Recursively calculate products of the parts
+    long long ac = karatsuba(a, c);
+    long long bd = karatsuba(b, d);
+    long long ad_plus_bc = karatsuba(a + b, c + d) - ac - bd;
 
-        // Calculate products
-        long long ac = multiply(a, c);
-        long long bd = multiply(b, d);
-        long long abcd = multiply(a + b, c + d) -ac-bd;
+    // Combine the results
+    return ac * (long long)pow(10, 2 * half) + ad_plus_bc * (long long)pow(10, half) + bd;
+}
 
-        // Combine results
-        result = ac * (long long)pow(10, 2 * half_n) + (abcd - ac - bd) * (long long)pow(10, half_n) + bd;
+int main() {
+    long long x = 123456789;
+    long long y = 987654321;
 
-        // Update x and y to use the result for further processing
-        x = result;
-//        y = 0; // We no longer need y for the next iteration
-    }
-    return multiply(x, y); // Handle case when one of them is < 10
+    long long result = karatsuba(x, y);
+
+    printf("Karatsuba multiplication of %lld and %lld is: %lld\n", x, y, result);
+
+    return 0;
 }
