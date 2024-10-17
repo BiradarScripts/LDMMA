@@ -1,24 +1,42 @@
 #include <iostream>
-#include <deque>
 #include <vector>
-#include <cmath>
-#include <bits/stdc++.h>
-
+#include <deque>
 
 using namespace std;
 
 typedef long long ll;
 
-// Function to split the input for Karatsuba algorithm
-vector<ll> karatsuba_split_inputs(ll multiplicand, ll multiplier) {
-    int m = max(to_string(multiplicand).length(), to_string(multiplier).length()) / 2;
+int integer_digits_base_n(unsigned long long num) {
+    int digits = 0;
+    while (num > 0) {
+        num >>= 16;  // Assuming base-n is 2^16, so we divide by 65536
+        digits++;
+    }
+    return digits;
+}
 
-    ll high1 = multiplicand / pow(10, m);
-    ll low1 = multiplicand % (ll)pow(10, m);
-    ll high2 = multiplier / pow(10, m);
-    ll low2 = multiplier % (ll)pow(10, m);
+vector<ll> karatsuba_split_inputs(unsigned long long multiplicand, unsigned long long multiplier) {
+    const int number_base_bit_shift = 16;
 
-    return {m, 2 * m, high1, low1, high2, low2};
+    int m2 = std::min(integer_digits_base_n(multiplicand), integer_digits_base_n(multiplier)) >> 1;
+    int m2_digit_shift_bits = m2 * number_base_bit_shift;
+    int m_digit_shift_bits = m2_digit_shift_bits << 1;
+
+    unsigned long long high1 = multiplicand >> m2_digit_shift_bits;
+    unsigned long long high2 = multiplier >> m2_digit_shift_bits;
+
+    unsigned long long low1 = multiplicand - (high1 << m2_digit_shift_bits);
+    unsigned long long low2 = multiplier - (high2 << m2_digit_shift_bits);
+
+    // Cast unsigned values to signed long long (ll) explicitly
+    return {
+        static_cast<ll>(m_digit_shift_bits),
+        static_cast<ll>(m2_digit_shift_bits),
+        static_cast<ll>(high1),
+        static_cast<ll>(low1),
+        static_cast<ll>(high2),
+        static_cast<ll>(low2)
+    };
 }
 
 ll karatsuba_multiply_iterative(ll multiplicand, ll multiplier) {
