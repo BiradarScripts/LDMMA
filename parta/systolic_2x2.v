@@ -1,14 +1,10 @@
 module systolic_matrix_mul_2x2(
     input wire clk,              // Clock signal
     input wire rst,              // Reset signal
-    input wire [31:0] a00,       // Input matrix A (0,0)
-    input wire [31:0] a01,       // Input matrix A (0,1)
-    input wire [31:0] a10,       // Input matrix A (1,0)
-    input wire [31:0] a11,       // Input matrix A (1,1)
-    input wire [31:0] b00,       // Input matrix B (0,0)
-    input wire [31:0] b01,       // Input matrix B (0,1)
-    input wire [31:0] b10,       // Input matrix B (1,0)
-    input wire [31:0] b11,       // Input matrix B (1,1)
+    input wire [31:0] a00,
+    input wire [31:0] a01,      // Input matrix A (0,0)
+    input wire [31:0] b00,
+    input wire [31:0] b01,        // Input matrix B (0,0)
     output wire [31:0] c00,      // Output matrix C (0,0)
     output wire [31:0] c01,      // Output matrix C (0,1)
     output wire [31:0] c10,      // Output matrix C (1,0)
@@ -34,8 +30,8 @@ systolic_unit pe00(
 
 // Instantiate the second PE for C(0,1)
 systolic_unit pe01(
-    .a(a01),
-    .b(b10),  // Systolic pattern: pass value from below
+    .a(a_reg00),
+    .b(b01),  // Systolic pattern: pass value from below
     .c(c_reg01),
     .clk(clk),
     .rst(rst),
@@ -46,8 +42,8 @@ systolic_unit pe01(
 
 // Instantiate the third PE for C(1,0)
 systolic_unit pe10(
-    .a(a10),
-    .b(b01),  // Systolic pattern: pass value from the right
+    .a(a01),
+    .b(b_reg00),    // Systolic pattern: pass value from the right
     .c(c_reg10),
     .clk(clk),
     .rst(rst),
@@ -58,8 +54,8 @@ systolic_unit pe10(
 
 // Instantiate the fourth PE for C(1,1)
 systolic_unit pe11(
-    .a(a11),
-    .b(b11),
+    .a(a_reg10),
+    .b(b_reg01),  
     .c(c_reg11),
     .clk(clk),
     .rst(rst),
