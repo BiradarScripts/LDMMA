@@ -21,7 +21,7 @@ always @(posedge clk or posedge rst) begin
         c_reg <= 0;
     end else begin
         // Update 'c' and output the values
-        c_reg <= c + a + b;
+        c_reg <= c + a*b;
         a_out <= a;
         b_out <= b;
         c_out <= c_reg;
