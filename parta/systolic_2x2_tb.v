@@ -70,6 +70,8 @@ systolic_unit pe00(
 // Debugging print for PE00 output
 always @(posedge clk) begin
     $display("PE00 - a_out: %d, b_out: %d, c00: %d", a_reg00, b_reg00, c00);
+     $display("PE00 - a00: %d, b00: %d, c00: %d", a00, b00, c00);
+    
 end
 
 // Instantiate the second PE for C(0,1)
@@ -164,15 +166,19 @@ module test_systolic_matrix_mul_2x2();
     a00 = 32'd1;  a01 = 32'd0;
     b00 = 32'd1;  b01 = 32'd0;
 
-    #20
+    #10
     // Test Case 2
     a00 = 32'd1;  a01 = 32'd1;
     b00 = 32'd1;  b01 = 32'd1;
 
-    #30
+    #10
     // Test Case 3
     a00 = 32'd0;  a01 = 32'd1;
     b00 = 32'd0;  b01 = 32'd1;
+    #10
+     a00 = 32'd0;  a01 = 32'd0;
+    b00 = 32'd0;  b01 = 32'd0;
+    
 
     // Wait and display final results
     #50;
