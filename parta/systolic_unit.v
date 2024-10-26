@@ -12,7 +12,7 @@ module systolic_unit(
 reg [31:0] c_reg;
 initial
 begin
-c_reg = 0;
+    c_reg = 0;
 end
 
 always @(posedge clk or posedge rst) begin
@@ -24,14 +24,14 @@ always @(posedge clk or posedge rst) begin
         c_reg <= 0;
     end else begin
         // Update 'c' and output the values
-<<<<<<< HEAD
-        c_reg <= c + a*b;
-=======
-        c_reg <= c_reg + a*b;
->>>>>>> 226a27df1f3c31561291f7623bcd4507757c119e
+        c_reg = c_reg + a * b;
         a_out <= a;
         b_out <= b;
-        c_out <= c_reg;
+        c_out = c_reg ; // Use the immediate result of the calculation
+        
+        // Debugging print statements
+        $display("systolic_unit:");
+        $display("a = %d, b = %d, c_out = %d c_reg=%d", a, b, c_out,c_reg);
     end
 end
 
