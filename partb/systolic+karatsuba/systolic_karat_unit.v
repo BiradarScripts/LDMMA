@@ -9,7 +9,16 @@ module systolic_unit(
 );
 
 // Internal register to store the updated 'c'
-reg [31:0] c_reg;
+reg [63:0] c_reg;
+wire [63:0] karatsuba_result;
+
+// Instantiate the Karatsuba MAC unit
+karatsuba_mac karatsuba_inst (
+    .A(a),
+    .B(b),
+    .result(karatsuba_result)
+);
+
 initial begin
     c_reg = 0;
 end
@@ -22,15 +31,15 @@ always @(posedge clk or posedge rst) begin
         c_out <= 0;
         c_reg <= 0;
     end else begin
-        // Update 'c' and output the values
-        c_reg <= c_reg + a * b;
+        // Use Karatsuba multiplication result for updating 'c'
+        c_reg = c_reg + karatsuba_result;
         a_out <= a;
         b_out <= b;
-        c_out <= c_reg; // Use the immediate result of the calculation
-        
+        c_out = c_reg[31:0]; // Only take the lower 32 bits for c_out
+
         // Debugging print statements
         $display("systolic_unit:");
-        $display("a = %d, b = %d, c_out = %d, c_reg = %d", a, b, c_out, c_reg);
+        $display("a = %d, b = %d, c_out = %d c_reg=%d", a, b, c_out, c_reg);
     end
 end
 
