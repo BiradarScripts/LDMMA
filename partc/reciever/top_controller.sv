@@ -25,10 +25,19 @@ module top_controller(
     wire [N_DATA_BITS-1:0] uart_rx_data;
     wire uart_rx_data_valid;
     
+    // Buffer for storing incoming UART data
     reg [N_DATA_BITS-1:0] uart_rx_data_buf;
     reg uart_rx_data_valid_buf;
     
-    // Variables for the seven segment display
+    // Variables for 32-bit data concatenation
+    reg [31:0] data_buffer;
+    reg [1:0] byte_counter; // Counts the number of bytes received (0 to 3)
+    reg [3:0] ram_address;  // Block RAM address with 16-depth (4-bit address)
+    
+    // Block RAM write enable
+    reg ram_write_enable;
+    
+    // Seven segment display variables
     reg display_clk;
     reg display_data_update;
     reg [N_DATA_BITS-1:0] display_data;
@@ -40,12 +49,19 @@ module top_controller(
     
     ila_0 input_monitor (
         .clk(uart_clk), // input wire clk
-    
-    
         .probe0(uart_rx_data_valid), // input wire [0:0]  probe0  
         .probe1(uart_rx_data), // input wire [7:0]  probe1 
         .probe2(i_uart_rx) // input wire [7:0]  probe2
     );
+    ila_2 debug (
+	.clk(uart_clk), // input wire clk
+
+
+	.probe0(data_buffer), // input wire [31:0]  probe0  
+	.probe1(ram_address), // input wire [3:0]  probe1 
+	.probe2(ram_write_enable) // input wire [0:0]  probe2
+);
+    
     
     uart_rx #(
         .OVERSAMPLE(OVERSAMPLE),
@@ -76,15 +92,16 @@ module top_controller(
     clk_wiz_0 clock_gen (
         // Clock out ports
         .clk_out1(uart_clk),     // output clk_out1    = 162.209M
-//        .clk_out2(display_clk),     // output clk_out2 = 43.6M
-       // Clock in ports
+        // Clock in ports
         .clk_in1(i_clk_100M)
     );
     
+    
+
     always @(posedge uart_clk) begin
         if(uart_divider_counter < (UART_CLOCK_DIVIDER-1))
             uart_divider_counter <= uart_divider_counter + 1;
-       else
+        else
             uart_divider_counter <= 'd0;
     end
     
@@ -92,8 +109,54 @@ module top_controller(
         uart_en <= (uart_divider_counter == 'd10); 
     end
     
-    always @(posedge uart_clk)
-        if(uart_rx_data_valid)
-            display_data <= uart_rx_data;
+    always @(posedge uart_clk) begin
+        if (reset) begin
+            byte_counter <= 2'b00;
+            data_buffer <= 32'b0;
+            ram_address <= 4'b0;
+            ram_write_enable <= 1'b0;
+        end else if (uart_rx_data_valid) begin
+            // Shift the new byte into the 32-bit buffer
+            data_buffer <= {data_buffer[23:0], uart_rx_data};
+            byte_counter <= byte_counter + 1;
+
+            if (byte_counter == 2'b11) begin
+                // When 4 bytes are received, enable RAM write and reset byte counter
+                ram_write_enable <= 1'b1;
+                byte_counter <= 2'b00;
+                ram_address<=ram_address+1;
+            end else begin
+                ram_write_enable <= 1'b0;
+            end
+        end else begin
+            ram_write_enable <= 1'b0;
+        end
+    end
+
+    // Instantiate Block RAM
+    blk_mem_gen_0 ram (
+      .clka(uart_clk),            // input wire clka
+      .ena(1'b0),                 // enable always on
+      .wea(ram_write_enable),     // write enable controlled by data concatenation
+      .addra(ram_address),        // RAM address
+      .dina(data_buffer),         // 32-bit input data to Block RAM
+      .douta()                    // output is unused here
+    );
     
+    
+
+    always @(posedge uart_clk) begin
+        if (ram_write_enable) begin
+            if (ram_address == 4'b1111) // Check if the address reaches the max depth (15)
+                ram_address <= 4'b0;    // Wrap around to 0
+            else
+                ram_address <= ram_address + 1;
+        end
+    end
+
+    // Update display data with the most recent UART data byte
+    always @(posedge uart_clk)
+        if (uart_rx_data_valid)
+            display_data <= uart_rx_data;
+
 endmodule
