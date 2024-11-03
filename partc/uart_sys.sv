@@ -18,95 +18,81 @@ module top_controller(
     localparam integer MAJORITY_END_IDX = 8;
     localparam integer UART_CLOCK_DIVIDER_WIDTH = $clog2(UART_CLOCK_DIVIDER);
     
-    
-    
     reg uart_clk;
     reg uart_en;
     reg [UART_CLOCK_DIVIDER_WIDTH:0] uart_divider_counter;
     
     wire [N_DATA_BITS-1:0] uart_rx_data;
     wire uart_rx_data_valid;
-    // put register for valid data 
     reg uart_rx_data_valid_delay;
     wire uart_rx_data_valid_pulse;
     
-    // Variables for the seven segment display
     reg [N_DATA_BITS-1:0] display_data;
     
-    // Block RAM control signals
     reg[5:0] write_counter;
     reg[3:0] ram_write_addr;
     reg[3:0] ram_read_addr;
     reg [31:0] ram_data_in;
     reg[5:0] counter;
     reg ram_we;
-    reg read_mode; // New flag to indicate read mode
+    reg read_mode;
     wire [31:0] ram_data_out0, ram_data_out1, ram_data_out2, ram_data_out3;
     wire ena;
     
     assign ena = 1;
-    
+
     blk_mem_gen_0 ram0 (
-      .clka(uart_clk),    // input wire clka
-      .ena(ena),      // input wire ena
-      .wea(ram_we && (write_counter[1:0] == 2'b00)),      // input wire [0 : 0] wea
-      .addra(read_mode ? ram_read_addr : ram_write_addr),  // input wire [3 : 0] addra
-      .dina(ram_data_in),    // input wire [31 : 0] dina
-      .douta(ram_data_out0)  // output wire [31 : 0] douta
-      );
+        .clka(uart_clk),
+        .ena(ena),
+        .wea(ram_we && (write_counter[1:0] == 2'b00)),
+        .addra(read_mode ? ram_read_addr : ram_write_addr),
+        .dina(ram_data_in),
+        .douta(ram_data_out0)
+    );
       
     blk_mem_gen_1 ram1 (
-      .clka(uart_clk),    // input wire clka
-      .ena(ena),      // input wire ena
-      .wea(ram_we && (write_counter[1:0] == 2'b01)),      // input wire [0 : 0] wea
-      .addra(read_mode ? ram_read_addr : ram_write_addr),  // input wire [3 : 0] addra
-      .dina(ram_data_in),    // input wire [31 : 0] dina
-      .douta(ram_data_out1)  // output wire [31 : 0] douta
+        .clka(uart_clk),
+        .ena(ena),
+        .wea(ram_we && (write_counter[1:0] == 2'b01)),
+        .addra(read_mode ? ram_read_addr : ram_write_addr),
+        .dina(ram_data_in),
+        .douta(ram_data_out1)
     );
     
     blk_mem_gen_2 ram2 (
-      .clka(uart_clk),    // input wire clka
-      .ena(ena),      // input wire ena
-      .wea(ram_we && (write_counter[1:0] == 2'b10)),      // input wire [0 : 0] wea
-      .addra(read_mode ? ram_read_addr : ram_write_addr),  // input wire [3 : 0] addra
-      .dina(ram_data_in),    // input wire [31 : 0] dina
-      .douta(ram_data_out2)  // output wire [31 : 0] douta
+        .clka(uart_clk),
+        .ena(ena),
+        .wea(ram_we && (write_counter[1:0] == 2'b10)),
+        .addra(read_mode ? ram_read_addr : ram_write_addr),
+        .dina(ram_data_in),
+        .douta(ram_data_out2)
     );
     
     blk_mem_gen_3 ram3 (
-      .clka(uart_clk),    // input wire clka
-      .ena(ena),      // input wire ena
-      .wea(ram_we && (write_counter[1:0] == 2'b11)),      // input wire [0 : 0] wea
-      .addra(read_mode ? ram_read_addr : ram_write_addr),  // input wire [3 : 0] addra
-      .dina(ram_data_in),    // input wire [31 : 0] dina
-      .douta(ram_data_out3)  // output wire [31 : 0] douta
+        .clka(uart_clk),
+        .ena(ena),
+        .wea(ram_we && (write_counter[1:0] == 2'b11)),
+        .addra(read_mode ? ram_read_addr : ram_write_addr),
+        .dina(ram_data_in),
+        .douta(ram_data_out3)
     );
-        
-//    vio_0 reset_source (
-//      .clk(i_clk_100M),
-//      .probe_out0(reset)  // output wire [0 : 0] probe_out0
-//    );
-    
+
     ila_0 input_monitor (
-        .clk(uart_clk), // input wire clk
-    
-    
-        .probe0(uart_rx_data_valid_pulse), // input wire [0:0]  probe0
-        .probe1(uart_rx_data), // input wire [7:0]  probe1
-        .probe2(i_uart_rx) // input wire [7:0]  probe2
+        .clk(uart_clk),
+        .probe0(uart_rx_data_valid_pulse),
+        .probe1(uart_rx_data),
+        .probe2(i_uart_rx)
     );
- 
-    
+
     ila_1 ram_monitor (
-	.clk(uart_clk), // input wire clk
-
-
-	.probe0(counter), // input wire [5:0]  probe0  
-	.probe1(ram_write_addr), // input wire [3:0]  probe1 
-	.probe2(ram_read_addr), // input wire [3:0]  probe2 
-	.probe3(read_mode), // input wire [0:0]  probe3 
-	.probe4(ram_data_out1) // input wire [31:0]  probe4
+        .clk(uart_clk),
+        .probe0(counter),
+        .probe1(ram_write_addr),
+        .probe2(ram_read_addr),
+        .probe3(read_mode),
+        .probe4(ram_data_out1)
     );
+    
     uart_rx #(
         .OVERSAMPLE(OVERSAMPLE),
         .N_DATA_BITS(N_DATA_BITS),
@@ -134,21 +120,56 @@ module top_controller(
     );
     
     clk_wiz_0 clock_gen (
-        // Clock out ports
-        .clk_out1(uart_clk),     // output clk_out1    = 162.209M
-//        .clk_out2(display_clk),     // output clk_out2 = 43.6M
-       // Clock in ports
+        .clk_out1(uart_clk),
         .clk_in1(i_clk_100M)
     );
 
+
+    // block ram for c(output)
+// blk_mem_gen_0 c1 (
+//   .clka(clk),    // input wire clka
+//   .ena(ena),      // input wire ena
+//   .wea(wea),      // input wire [0 : 0] wea
+//   .addra(addra),  // input wire [3 : 0] addra
+//   .dina(dina),    // input wire [31 : 0] dina
+//   .douta(b[0])  // output wire [31 : 0] douta
+// );
+
+// blk_mem_gen_1 c2 (
+//   .clka(clk),    // input wire clka
+//   .ena(ena),      // input wire ena
+//   .wea(wea),      // input wire [0 : 0] wea
+//   .addra(addra),  // input wire [3 : 0] addra
+//   .dina(dina),    // input wire [31 : 0] dina
+//   .douta(b[1])  // output wire [31 : 0] douta
+// );
+
+// blk_mem_gen_2 c3 (
+//   .clka(clk),    // input wire clka
+//   .ena(ena),      // input wire ena
+//   .wea(wea),      // input wire [0 : 0] wea
+//   .addra(addra),  // input wire [3 : 0] addra
+//   .dina(dina),    // input wire [31 : 0] dina
+//   .douta(b[2])  // output wire [31 : 0] douta
+// );
+
+// blk_mem_gen_3 c4 (
+//   .clka(clk),    // input wire clka
+//   .ena(ena),      // input wire ena
+//   .wea(wea),      // input wire [0 : 0] wea
+//   .addra(addra),  // input wire [3 : 0] addra
+//   .dina(dina),    // input wire [31 : 0] dina
+//   .douta(b[3])  // output wire [31 : 0] douta
+// );
+
     systolic_matrix_mul_4x4 multiplier(
-    uart_clk,                   // Clock signal
-    reset,                   // Reset signal
-    input wire [31:0] a[0:3],         // 4x4 input matrix A
-    input wire [31:0] b[0:3],         // 4x4 input matrix B
-    output wire [31:0] c[0:3][0:3]    // 4x4 output matrix C
-);
-    
+        .clk(uart_clk),
+        .rst(reset),
+        .a({ram_data_out0, ram_data_out1, ram_data_out2, ram_data_out3}),
+        .b({ram_data_out0, ram_data_out1, ram_data_out2, ram_data_out3}),
+        .c(/* connect output matrix C here */)
+    );
+
     always @(posedge uart_clk) begin
         if (reset)
             uart_rx_data_valid_delay <= 0;
@@ -159,7 +180,7 @@ module top_controller(
     always @(posedge uart_clk) begin
         if(uart_divider_counter < (UART_CLOCK_DIVIDER-1))
             uart_divider_counter <= uart_divider_counter + 1;
-       else
+        else
             uart_divider_counter <= 'd0;
     end
     
@@ -191,7 +212,6 @@ module top_controller(
                     ram_write_addr <= 0;
                     counter <= counter + 1;
                     write_counter <= write_counter + 1;
-                    
                 end
                 else begin
                     ram_write_addr <= ram_write_addr + 1;
@@ -203,7 +223,6 @@ module top_controller(
         end
         else begin // Read mode
             ram_we <= 1'b0;
-            // Cycle through addresses for reading
             if (ram_read_addr == BLOCK_RAM_SIZE - 1)
                 ram_read_addr <= 0;
             else
@@ -211,7 +230,6 @@ module top_controller(
         end
     end
     
-    // Display control logic
     always @(posedge uart_clk) begin
         if (reset)
             display_data <= 0;
