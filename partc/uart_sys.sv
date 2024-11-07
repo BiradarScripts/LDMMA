@@ -126,49 +126,124 @@ module top_controller(
 
 
     // block ram for c(output)
-// blk_mem_gen_0 c1 (
+// blk_mem_gen_4 c1 (
 //   .clka(clk),    // input wire clka
 //   .ena(ena),      // input wire ena
 //   .wea(wea),      // input wire [0 : 0] wea
 //   .addra(addra),  // input wire [3 : 0] addra
 //   .dina(dina),    // input wire [31 : 0] dina
-//   .douta(b[0])  // output wire [31 : 0] douta
+//   .douta()  // output wire [31 : 0] douta
 // );
 
-// blk_mem_gen_1 c2 (
+// blk_mem_gen_5 c2 (
 //   .clka(clk),    // input wire clka
 //   .ena(ena),      // input wire ena
 //   .wea(wea),      // input wire [0 : 0] wea
 //   .addra(addra),  // input wire [3 : 0] addra
 //   .dina(dina),    // input wire [31 : 0] dina
-//   .douta(b[1])  // output wire [31 : 0] douta
+//   .douta()  // output wire [31 : 0] douta
 // );
 
-// blk_mem_gen_2 c3 (
+// blk_mem_gen_6 c3 (
 //   .clka(clk),    // input wire clka
 //   .ena(ena),      // input wire ena
 //   .wea(wea),      // input wire [0 : 0] wea
 //   .addra(addra),  // input wire [3 : 0] addra
 //   .dina(dina),    // input wire [31 : 0] dina
-//   .douta(b[2])  // output wire [31 : 0] douta
+//   .douta()  // output wire [31 : 0] douta
 // );
 
-// blk_mem_gen_3 c4 (
+// blk_mem_gen_7 c4 (
 //   .clka(clk),    // input wire clka
 //   .ena(ena),      // input wire ena
 //   .wea(wea),      // input wire [0 : 0] wea
 //   .addra(addra),  // input wire [3 : 0] addra
 //   .dina(dina),    // input wire [31 : 0] dina
-//   .douta(b[3])  // output wire [31 : 0] douta
+//   .douta()  // output wire [31 : 0] douta
 // );
 
-    systolic_matrix_mul_4x4 multiplier(
-        .clk(uart_clk),
-        .rst(reset),
-        .a({ram_data_out0, ram_data_out1, ram_data_out2, ram_data_out3}),
-        .b({ram_data_out0, ram_data_out1, ram_data_out2, ram_data_out3}),
-        .c(/* connect output matrix C here */)
-    );
+
+wire [31:0] c00;
+wire [31:0] c01;
+wire [31:0] c02;
+wire [31:0] c03;
+wire [31:0] c10;
+wire [31:0] c11;
+wire [31:0] c12;
+wire [31:0] c13;
+wire [31:0] c20;
+wire [31:0] c21;
+wire [31:0] c22;
+wire [31:0] c23;
+wire [31:0] c30;
+wire [31:0] c31;
+wire [31:0] c32;
+wire [31:0] c33;
+
+
+
+ systolic_matrix_mul_4x4 multiplier (
+    .clk(uart_clk),
+    .rst(reset),
+
+    // Map each element of matrix A to the appropriate inputs
+    .a_0(ram_data_out0),
+    .a_1(ram_data_out1),
+    .a_2(ram_data_out2),
+    .a_3(ram_data_out3),
+
+    // Map each element of matrix B to the appropriate inputs
+    .b_0(ram_data_out0),
+    .b_1(ram_data_out1),
+    .b_2(ram_data_out2),
+    .b_3(ram_data_out3),
+    .flag(read_mode),
+
+    // Connect each element of the output matrix C individually
+    .c_00(c00),
+    .c_01(c01),
+    .c_02(c02),
+    .c_03(c03),
+    .c_10(c10),
+    .c_11(c11),
+    .c_12(c12),
+    .c_13(c13),
+    .c_20(c20),
+    .c_21(c21),
+    .c_22(c22),
+    .c_23(c23),
+    .c_30(c30),
+    .c_31(c31),
+    .c_32(c32),
+    .c_33(c33)
+);
+
+
+ila_4 monitor_debug (
+	.clk(uart_clk), // input wire clk
+
+
+	.probe0(ram_data_out0), // input wire [31:0]  probe0  
+	.probe1(ram_data_out1), // input wire [31:0]  probe1 
+	.probe2(ram_data_out2), // input wire [31:0]  probe2 
+	.probe3(ram_data_out3), // input wire [31:0]  probe3 
+	.probe4(c00), // input wire [31:0]  probe4
+	.probe5(read_mode)
+);
+
+
+
+ila_2 final_monitor (
+	.clk(uart_clk), // input wire clk
+
+
+	.probe0(c00), // input wire [31:0]  probe0  
+	.probe1(c01), // input wire [31:0]  probe1 
+	.probe2(c02), // input wire [31:0]  probe2 
+	.probe3(c03) // input wire [31:0]  probe3
+);
+    
+
 
     always @(posedge uart_clk) begin
         if (reset)
@@ -223,8 +298,11 @@ module top_controller(
         end
         else begin // Read mode
             ram_we <= 1'b0;
-            if (ram_read_addr == BLOCK_RAM_SIZE - 1)
-                ram_read_addr <= 0;
+            if (ram_read_addr == BLOCK_RAM_SIZE - 1) begin
+//                ram_read_addr <= 0;
+                read_mode <= 1'b0;
+                counter <= 10;
+            end
             else
                 ram_read_addr <= ram_read_addr + 1;
         end
