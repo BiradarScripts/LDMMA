@@ -1,4 +1,4 @@
-#include "matrix_mult.h"
+#include"mat_4x4_mul.h"
 
 void matrix_mult_4x4(int A[4][4], int B[4][4], int C[4][4]) {
     #pragma HLS array_partition variable=A complete

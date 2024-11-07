@@ -1,6 +1,6 @@
-#include <iostream>
-#include "matrix_mult.h"
-
+// For printf instead of iostream
+#include <stdio.h>
+#include"mat_4x4_mul.h"
 int main() {
     int A[4][4] = {{1, 2, 3, 4},
                    {5, 6, 7, 8},
@@ -18,12 +18,12 @@ int main() {
     matrix_mult_4x4(A, B, C);
     
     // Output the result matrix
-    std::cout << "Resultant Matrix C: " << std::endl;
+    printf("Resultant Matrix C: \n");
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            std::cout << C[i][j] << " ";
+            printf("%d ", C[i][j]);
         }
-        std::cout << std::endl;
+        printf("\n");
     }
 
     return 0;
