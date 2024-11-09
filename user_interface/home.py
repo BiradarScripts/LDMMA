@@ -7,13 +7,9 @@ import platform
 
 # Detect operating system and set the COM port accordingly
 if platform.system() == 'Windows':
-    com_port = 'COM5'  # Update COM port to the correct one from Device Manager
+    com_port = 'COM8'  # Update COM port to the correct one from Device Manager
 else:
     com_port = '/dev/ttyUSB0'  # Update for Linux users if different
-
-
-def isValid(x, y):
-    return 0 <= x <= 3 and 0 <= y <= 3
 
 # Function to open the COM port
 def open_serial_connection():
@@ -34,16 +30,30 @@ st.write("Enter the elements of two 4x4 matrices, and this tool will send them f
 
 st.markdown("---")
 
+# Random initialization button
+if st.button("Randomize Matrices"):
+    st.session_state.matrix1 = np.random.randint(0, 245, size=(4, 4), dtype=np.int32)
+    st.session_state.matrix2 = np.random.randint(0, 245, size=(4, 4), dtype=np.int32)
+    st.success("Matrices have been randomized!")
+
 # Matrix 1 input
 st.subheader("Matrix 1 (A)")
 matrix1 = []
 for i in range(4):
     row = st.columns(4)
-    matrix1.append([row[j].number_input(f"A[{i+1}][{j+1}]", key=f"m1_{i}_{j}", 
-                                         min_value=-100, max_value=100, 
-                                         value=int(st.session_state.matrix1[i][j]), 
-                                         step=1, format="%d", label_visibility="collapsed") 
-                    for j in range(4)])
+    matrix1_row = []
+    for j in range(4):
+        matrix1_row.append(row[j].number_input(
+            f"A[{i+1}][{j+1}]", 
+            key=f"m1_{i}_{j}", 
+            min_value=0, 
+            max_value=245, 
+            value=int(st.session_state.matrix1[i][j]), 
+            step=1, 
+            format="%d", 
+            label_visibility="collapsed"
+        ))
+    matrix1.append(matrix1_row)
 
 st.markdown("---")  # Separation line between Matrix 1 and Matrix 2
 
@@ -52,11 +62,19 @@ st.subheader("Matrix 2 (B)")
 matrix2 = []
 for i in range(4):
     row = st.columns(4)
-    matrix2.append([row[j].number_input(f"B[{i+1}][{j+1}]", key=f"m2_{i}_{j}", 
-                                         min_value=-100, max_value=100, 
-                                         value=int(st.session_state.matrix2[i][j]), 
-                                         step=1, format="%d", label_visibility="collapsed") 
-                    for j in range(4)])
+    matrix2_row = []
+    for j in range(4):
+        matrix2_row.append(row[j].number_input(
+            f"B[{i+1}][{j+1}]", 
+            key=f"m2_{i}_{j}", 
+            min_value=0, 
+            max_value=245, 
+            value=int(st.session_state.matrix2[i][j]), 
+            step=1, 
+            format="%d", 
+            label_visibility="collapsed"
+        ))
+    matrix2.append(matrix2_row)
 
 # Convert lists to numpy arrays for sending to FPGA
 matrix1_np = np.array(matrix1)
@@ -82,9 +100,7 @@ if st.button("Calculate and Send to FPGA"):
 
                 for item in send_array:
                     port.write(struct.pack('>B', int(item)))  # Send data to FPGA
-                    time.sleep(0.1)  # Adjust as needed
-        
-
+                    time.sleep(1)  # Adjust as needed
 
         # Send both matrices to FPGA
         st.info("Sending Matrix 1 to FPGA...")
