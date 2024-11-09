@@ -1,6 +1,23 @@
 import streamlit as st
+import serial
+import struct
+import time
 import numpy as np
-import random
+import platform
+
+# Detect operating system and set the COM port accordingly
+if platform.system() == 'Windows':
+    com_port = 'COM5'  # Update COM port to the correct one from Device Manager
+else:
+    com_port = '/dev/ttyUSB0'  # Update for Linux users if different
+
+
+def isValid(x, y):
+    return 0 <= x <= 3 and 0 <= y <= 3
+
+# Function to open the COM port
+def open_serial_connection():
+    return serial.Serial(com_port, baudrate=115200, bytesize=8, parity='N', stopbits=1)
 
 # Initialize session state for matrices if not already initialized
 if 'matrix1' not in st.session_state:
@@ -8,55 +25,12 @@ if 'matrix1' not in st.session_state:
 if 'matrix2' not in st.session_state:
     st.session_state.matrix2 = np.zeros((4, 4), dtype=int)
 
-# Function to perform matrix multiplication
-def multiply_matrices(matrix1, matrix2):
-    return np.dot(matrix1, matrix2)
-
-# Function to generate a random 4x4 matrix
-def generate_random_matrix():
-    return np.random.randint(-100, 101, size=(4, 4))
-
 # Streamlit UI setup
 st.set_page_config(page_title="Matrix Multiplication", page_icon="🔢", layout="centered")
 
-# Background CSS animation for a dynamic effect
-st.markdown(
-    """
-    <style>
-    .background {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background: #e0f7fa;
-        overflow: hidden;
-    }
-    .circle {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(0, 150, 136, 0.1);
-        animation: float 10s linear infinite;
-    }
-    @keyframes float {
-        0% { transform: translateY(0px) translateX(0px); }
-        50% { transform: translateY(-20px) translateX(20px); }
-        100% { transform: translateY(0px) translateX(0px); }
-    }
-    </style>
-    <div class="background">
-        <div class="circle" style="width: 200px; height: 200px; top: 20%; left: 10%;"></div>
-        <div class="circle" style="width: 100px; height: 100px; top: 70%; left: 80%;"></div>
-        <div class="circle" style="width: 150px; height: 150px; top: 40%; left: 60%;"></div>
-        <div class="circle" style="width: 120px; height: 120px; top: 80%; left: 20%;"></div>
-    </div>
-    """, unsafe_allow_html=True
-)
-
 # Title and description
-st.title("🔢 4x4 Matrix Multiplication")
-st.write("Enter the elements of two 4x4 matrices, and this tool will calculate their product.")
+st.title("🔢 4x4 Matrix Multiplication with FPGA Communication")
+st.write("Enter the elements of two 4x4 matrices, and this tool will send them for calculation.")
 
 st.markdown("---")
 
@@ -84,41 +58,49 @@ for i in range(4):
                                          step=1, format="%d", label_visibility="collapsed") 
                     for j in range(4)])
 
-# Convert lists to numpy arrays for matrix multiplication
+# Convert lists to numpy arrays for sending to FPGA
 matrix1_np = np.array(matrix1)
 matrix2_np = np.array(matrix2)
 
-# Buttons for additional functionalities
-btn_col1, btn_col2, btn_col3 = st.columns(3)
+# Button to send matrices to FPGA
+if st.button("Calculate and Send to FPGA"):
+    try:
+        # Open serial connection
+        ComPort = open_serial_connection()
 
-# Copy button to transfer values from Matrix 1 to Matrix 2
-with btn_col1:
-    if st.button("Copy Matrix A to Matrix B"):
-        st.session_state.matrix2 = matrix1_np
-
-# Random button to fill both matrices with random values
-with btn_col2:
-    if st.button("Randomize Matrices"):
-        st.session_state.matrix1 = generate_random_matrix()
-        st.session_state.matrix2 = generate_random_matrix()
-
-# Calculate button to compute the product
-with btn_col3:
-    if st.button("Calculate Product"):
-        try:
-            result = multiply_matrices(matrix1_np, matrix2_np)
-            st.success("Matrix multiplication successful!")
-            
-            st.subheader("Resultant Matrix")
-            # Display the resulting matrix in a styled grid
+        # Function to send matrix data to FPGA
+        def send_matrix_to_fpga(matrix, port):
             for i in range(4):
-                result_cols = st.columns(4)
-                for j in range(4):
-                    result_cols[j].write(f"**{result[i][j]:d}**")
-                    
-        except Exception as e:
-            st.error(f"Error: {e}")
+                col = -1 * i
+                row = i
+                send_array = [0]
+                for j in range(9):
+                    if 0 <= col + j <= 3 and 0 <= row <= 3:
+                        send_array.append(matrix[row][col + j])
+                    else:
+                        send_array.append(0)
+
+                for item in send_array:
+                    port.write(struct.pack('>B', int(item)))  # Send data to FPGA
+                    time.sleep(0.1)  # Adjust as needed
+        
+
+
+        # Send both matrices to FPGA
+        st.info("Sending Matrix 1 to FPGA...")
+        send_matrix_to_fpga(matrix1_np, ComPort)
+
+        st.info("Sending Matrix 2 to FPGA...")
+        send_matrix_to_fpga(matrix2_np, ComPort)
+
+        st.success("Matrices successfully sent to FPGA!")
+
+        # Close the serial connection
+        ComPort.close()
+        
+    except serial.SerialException as e:
+        st.error(f"Failed to connect to COM port: {e}")
 
 # Footer
 st.markdown("---")
-st.markdown("Developed with ❤️ using Streamlit", unsafe_allow_html=True)
+st.markdown("Developed with ❤️ using Streamlit and Serial Communication", unsafe_allow_html=True)
